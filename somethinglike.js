@@ -15,7 +15,9 @@ var request = require('request');
 var gpsd = require('node-gpsd');
 
 function startLoop(){
-  console.log(currentAsset);
+
+  var lastSave = null;
+
   var listener = new gpsd.Listener({
     port: 2947,
     hostname: 'localhost',
@@ -35,8 +37,50 @@ function startLoop(){
     console.log('disconnected');
   });*/
 
-  listener.on('TPV', function(data){
+  var updateLocation = function(data){
+    lastSave = new Date();
+
     console.log(data);
+
+    var url = '/api/assets/' + currentAsset.id + '/locations';
+
+    var postData = {
+      latitude: data.lat,
+      longitude: data.lon,
+      created: (new Date()).toUTCString()
+    };
+
+    request({
+      uri: 'http://dudewheresmypi.azurewebsites.net' + url,
+      method: 'POST',
+      body: postData,
+      json: true,
+      headers: {'Content-Type': 'application/json'}
+    }, function (error, response, body) {
+      //console.log(body)
+      if (!error && response.statusCode <= 300) {
+
+        console.log(response);
+      } else {
+        console.log(error);
+      }
+    })
+  };
+
+  listener.on('TPV', function(data){
+
+    if (!lastSave ){
+      updateLocation(data);
+    }
+
+    var twoMinutes = new Date(lastSave.getTime());
+
+    twoMinutes.setMinutes(twoMinutes.getMinutes() + 1);
+
+    if (new Date() > twoMinutes){
+      updateLocation(data);
+    }
+
   });
 
   listener.watch({class:'WATCH', json: true, nmea:false});
