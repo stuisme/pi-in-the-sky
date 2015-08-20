@@ -12,15 +12,40 @@ var fs = require('fs');
 var registration = 'registration.json';
 var currentAsset;
 var request = require('request');
+var gpsd = require('node-gpsd');
 
 function startLoop(){
   console.log(currentAsset);
+  var listener = new gpsd.Listener({
+    port: 2947,
+    hostname: 'localhost',
+    logger: {
+      info: function(){},
+      warn: console.warn,
+      error: console.error
+    },
+    parse: true
+  });
+
+  listener.connect(function(){
+    console.log('connected');
+  });
+
+ /* listener.disconnect(function(){
+    console.log('disconnected');
+  });*/
+
+  listener.on('TPV', function(data){
+    console.log(data);
+  });
+
+  listener.watch({class:'WATCH', json: true, nmea:false});
 }
 
 function registerDevice(cb){
   console.log('registering');
   var asset = request({
-    uri: 'http://localhost:62977/api/assets',
+    uri: 'http://dudewheresmypi.azurewebsites.net/api/assets',
     method: 'POST',
     body: {name: (new Date()).toString()},
     json: true,
