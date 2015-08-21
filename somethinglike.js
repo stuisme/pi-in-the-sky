@@ -9,7 +9,7 @@
 //   })
 // }
 var fs = require('fs');
-var registration = 'registration.json';
+var registration = '/pi-in-the-sky/registration.json';
 var currentAsset;
 var request = require('request');
 var gpsd = require('node-gpsd');
@@ -17,6 +17,21 @@ var gpsd = require('node-gpsd');
 function startLoop(){
 
   var lastSave = null;
+  var daemon = new gpsd.Daemon({
+    program: 'gpsd',
+    device: '/dev/ttyAMA0',
+    port: '2947',
+    pid: '/tmp/gpsd.pid',
+    logger: {
+      info: function(){},
+      warn: console.warn,
+      error: console.error
+    }
+  });
+
+  daemon.start(function(){
+    console.log('daemon started');
+  });
 
   var listener = new gpsd.Listener({
     port: 2947,
@@ -60,7 +75,7 @@ function startLoop(){
       //console.log(body)
       if (!error && response.statusCode <= 300) {
 
-        console.log(response);
+//        console.log(response);
       } else {
         console.log(error);
       }
