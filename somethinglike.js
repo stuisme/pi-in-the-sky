@@ -15,8 +15,6 @@ var request = require('request');
 var gpsd = require('node-gpsd');
 
 function startLoop(){
-
-  var lastSave = null;
   var daemon = new gpsd.Daemon({
     program: 'gpsd',
     device: '/dev/ttyAMA0',
@@ -31,8 +29,13 @@ function startLoop(){
 
   daemon.start(function(){
     console.log('daemon started');
+    startListener();
   });
 
+}
+
+var startListener = function(){
+  var lastSave = null;
   var listener = new gpsd.Listener({
     port: 2947,
     hostname: 'localhost',
@@ -48,9 +51,9 @@ function startLoop(){
     console.log('connected');
   });
 
- /* listener.disconnect(function(){
-    console.log('disconnected');
-  });*/
+  /* listener.disconnect(function(){
+   console.log('disconnected');
+   });*/
 
   var updateLocation = function(data){
     lastSave = new Date();
@@ -99,7 +102,7 @@ function startLoop(){
   });
 
   listener.watch({class:'WATCH', json: true, nmea:false});
-}
+};
 
 function registerDevice(cb){
   console.log('registering');
