@@ -1,13 +1,3 @@
-// function init(file.json, res){
-//   fs.readFile('file.json', function (err, data) {
-//       var jsondata = JSON.parse(data);
-//       if(jsondata.id == nil){
-//           var pidee = getPidee()
-//           res.write(JSON.stringify(pidee));
-//       }
-//       res.end();
-//   })
-// }
 var fs = require('fs');
 var registration = '/pi-in-the-sky/registration.json';
 var currentAsset;
@@ -75,6 +65,10 @@ var startListener = function(){
       json: true,
       headers: {'Content-Type': 'application/json'}
     }, function (error, response, body) {
+
+      if (error){
+        console.log(error);
+      }
       //console.log(body)
       if (!error && response.statusCode <= 300) {
 
@@ -87,7 +81,14 @@ var startListener = function(){
 
   listener.on('TPV', function(data){
 
-    if (!lastSave ){
+    // if no fix yet, no need to send the information
+    // 0 = not set, 1 = no fix
+    // 2 = 2d, 3= 3d
+    if (data.mode < 2){
+      return;
+    }
+
+    if (!lastSave){
       updateLocation(data);
     }
 
@@ -106,7 +107,7 @@ var startListener = function(){
 
 function registerDevice(cb){
   console.log('registering');
-  var asset = request({
+  request({
     uri: 'http://dudewheresmypi.azurewebsites.net/api/assets',
     method: 'POST',
     body: {name: (new Date()).toString()},
@@ -120,7 +121,7 @@ function registerDevice(cb){
         currentAsset = body;
         return cb(body);
       }
-  })
+  });
 }
 
 function init(){
